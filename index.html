@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Type play</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Fluid Lab - V2 Metallic Edition</title>
+    <!-- 引入 Three.js 核心及 GLTF 加载器 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        * {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #EBEBEB;
+            display: flex;
+            justify-content: flex-start; 
+            align-items: stretch;        
+            height: 100vh;               
+            font-family: "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .main-container {
+            display: flex;
+            align-items: center; 
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px; 
+            background-color: #3B95FF; 
+            padding: 50px 35px; 
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100%; 
+            z-index: 1000;
+            color: #000000; 
+            box-shadow: 6px 0 20px rgba(0,0,0,0.1); 
+            overflow-y: auto;
+        }
+
+        .canvas-wrapper {
+            height: 82vh; 
+            max-height: 950px;
+            aspect-ratio: 3 / 4; 
+            width: calc(82vh * 0.75);
+            background: #FFFFFF; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden; 
+            margin: auto; 
+            border: 0 !important;
+            transition: background 0.3s ease;
+        }
+        
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .btn-import {
+            background: #FFFFFF; color: #000000; padding: 12px 0; 
+            width: 100%; font-size: 11px; font-weight: bold; margin-bottom: 30px; 
+            text-align: center; cursor: pointer; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        
+        .control-group { margin-bottom: 22px; }
+        .label { font-size: 10px; color: #000000; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        select {
+            width: 100%; background: #FFFFFF; height: 30px; 
+            font-size: 11px; font-weight: bold; padding: 0 5px; cursor: pointer;
+        }
+
+        .btn-pause {
+            width: 30px; height: 30px; background: #FFFFFF;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+        }
+
+        .color-picker-item {
+            width: 100%; background: #FFFFFF; height: 30px; 
+            display: flex; align-items: center; padding: 0 10px; box-sizing: border-box; gap: 10px;
+        }
+
+        .bg-upload-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-bg-upload {
+            background: #000000; color: #3B95FF; flex: 1; height: 26px;
+            font-size: 9px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+
+        .btn-bg-remove {
+            background: #000000; color: #3B95FF; width: 26px; height: 26px;
+            font-size: 10px; font-weight: bold; cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+        }
+
+        .hex-input { 
+            font-size: 10px; font-weight: bold; font-family: monospace; 
+            background: transparent; width: 100%; color: #000000;
+        }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; padding: 8px 0; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 2px; background: #000000; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #000000; margin-top: -5px; cursor: pointer; }
+        
+        .btn-export { 
+            flex: 1; background: #000000; color: #3B95FF; 
+            padding: 10px 0; font-size: 10px; font-weight: bold; cursor: pointer; 
+        }
+        .btn-export:disabled { opacity: 0.5; cursor: wait; }
+
+        #resetBtn { cursor: pointer; text-decoration: none; opacity: 0.8; font-size: 9px; }
+
+        .sidebar-footer { margin-top: auto; font-size: 10px; line-height: 1.5; color: #000000; opacity: 0.8; font-weight: 600; padding-top: 40px; }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="sidebar">
+        <button class="btn-import" id="importBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v13M7 8l5-5 5 5M5 21h14"></path>
+            </svg>
+            图片/视频 IMPORT
+        </button>
+
+        <div class="control-group">
+            <div class="label">背景颜色 BG COLOR</div>
+            <div class="color-picker-item">
+                <input type="color" id="bgColor" value="#FFFFFF">
+                <input type="text" class="hex-input" id="v-bgColor" value="#FFFFFF" spellcheck="false" maxlength="9">
+            </div>
+            <div class="bg-upload-row">
+                <button class="btn-bg-upload" id="importBgBtn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v13M7 8l5-5 5 5M5 21h14"></path>
+                    </svg>
+                    上传背景图 IMAGE
+                </button>
+                <div class="btn-bg-remove" id="removeBgBtn">X</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="label">抠像阈值 THRESHOLD <span id="v-threshold">0.45</span></div>
+            <input type="range" id="threshold" min="0.0" max="1.0" step="0.01" value="0.45">
+        </div>
+
+        <div class="control-group">
+            <div class="label">流动速度 SPEED <span id="v-speed">0.5</span></div>
+            <input type="range" id="speed" min="0.0" max="2.0" step="0.01" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="label">图形缩放 SCALE <span id="v-scale">1.0</span></div>
+            <input type="range" id="scale" min="0.1" max="2.0" step="0.01" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label">重构主题 THEME</div>
+            <div style="display: flex; gap: 8px;">
+                <select id="themeSelect">
+                    <option value="Original">ORIGINAL HOLOGRAPHIC</option>
+                    <option value="ThermalLiquid">SPECTRAL LIQUID</option>
+                    <option value="Metallic">MONO GRAYSCALE</option>
+                </select>
+                <button class="btn-pause" id="pauseBtn" title="暂停/播放">
+                    <svg id="pauseIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="label" style="margin-top: 20px;">
+            导出 EXPORT
+            <span id="resetBtn">RESET 重置</span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="downloadJpg" class="btn-export">JPG</button>
+            <button id="downloadPng" class="btn-export">PNG</button>
+            <button id="downloadMp4" class="btn-export" style="flex: 100%;">DOWNLOAD MP4</button>
+        </div>
+
+        <div class="sidebar-footer">
+            2026 © Designed by Type Play Lab.
+        </div>
+    </div>
+
+    <div class="canvas-wrapper" id="dropZone">
+        <input type="file" id="fileInput" accept="image/*,video/*,.glb,.gltf" style="display: none;">
+        <input type="file" id="bgFileInput" accept="image/*" style="display: none;">
+    </div>
+</div>
+
+<script>
+    const themes = {
+        'Original': { mode: 0.0, c: [] },
+        'ThermalLiquid': { mode: 1.0, c: [[0,0,0.5],[0,0,1],[0,1,1],[0,1,0],[1,1,0],[1,0.5,0],[1,0,0]] },
+        'Metallic': { mode: 2.0, c: [] }
+    };
+
+    const fragmentShader = `
+        uniform vec2 uResolution;
+        uniform float uTime;
+        uniform float uSpeed;
+        uniform float uThreshold;
+        uniform float uScale;
+        uniform vec3 uBgColor;
+        uniform vec3 uC[7]; 
+        uniform sampler2D uTexture;
+        uniform vec2 uTexRes;
+        uniform sampler2D uBgTexture;
+        uniform float uHasBgTexture;
+        uniform float uHasMainTexture;
+        uniform vec2 uBgRes;
+        uniform float uMode; 
+        uniform float uIsTransparent;
+        varying vec2 vUv;
+
+        vec2 getCorrectUv(vec2 uv, vec2 canvasRes, vec2 texRes, float userScale, bool isCover) {
+            float canvasAspect = 0.75; 
+            float texAspect = texRes.x / texRes.y;
+            vec2 scale = vec2(1.0);
+            if (isCover) {
+                if (texAspect > canvasAspect) scale.x = canvasAspect / texAspect;
+                else scale.y = texAspect / canvasAspect;
+            } else {
+                if (texAspect > canvasAspect) scale.y = texAspect / canvasAspect;
+                else scale.x = canvasAspect / texAspect;
+            }
+            return (uv - 0.5) * scale / (isCover ? 1.0 : userScale) + 0.5;
+        }
+
+        vec3 getThermal(float v) {
+            v = clamp(v, 0.0, 1.0);
+            float s = 1.0 / 6.0;
+            if(v < s) return mix(uC[0], uC[1], v * 6.0);
+            if(v < s * 2.0) return mix(uC[1], uC[2], (v - s) * 6.0);
+            if(v < s * 3.0) return mix(uC[2], uC[3], (v - s * 2.0) * 6.0);
+            if(v < s * 4.0) return mix(uC[3], uC[4], (v - s * 3.0) * 6.0);
+            if(v < s * 5.0) return mix(uC[4], uC[5], (v - s * 4.0) * 6.0);
+            return mix(uC[5], uC[6], (v - s * 5.0) * 6.0);
+        }
+
+        void main() {
+            vec3 finalBg;
+            if(uHasBgTexture > 0.5) finalBg = texture2D(uBgTexture, getCorrectUv(vUv, uResolution, uBgRes, 1.0, true)).rgb;
+            else finalBg = uBgColor;
+
+            if(uHasMainTexture < 0.5) {
+                gl_FragColor = vec4(finalBg, (uIsTransparent > 0.5 ? 0.0 : 1.0)); return;
+            }
+
+            float time = uTime * uSpeed;
+            vec2 mainUv = getCorrectUv(vUv, uResolution, uTexRes, uScale, false);
+            vec4 texSmp = texture2D(uTexture, mainUv);
+            float gray = dot(texSmp.rgb, vec3(0.299, 0.587, 0.114));
+            float mask = smoothstep(uThreshold, uThreshold + 0.05, (texSmp.a < 0.1 ? 0.0 : 1.0 - gray));
+            mask *= step(0.0, mainUv.x) * step(mainUv.x, 1.0) * step(0.0, mainUv.y) * step(mainUv.y, 1.0);
+
+            vec3 fluidCol;
+            float n = sin(mainUv.x * 3.5 + time) * cos(mainUv.y * 3.0 - time * 0.8) * 0.15;
+            
+            if(uMode < 0.5) {
+                float gv = cos(gray * 6.28 + sin(gray * 8.0 + n + time) * 1.5);
+                fluidCol = vec3(cos(gv), cos(gv + 2.0), cos(gv + 4.0)) * 0.5 + 0.5;
+            } else if (uMode > 1.5) {
+                float baseDetail = gray;
+                float reflection = sin(gray * 10.0 + n * 3.0 + time * 0.8) * 0.1;
+                float fresnel = pow(1.0 - baseDetail, 2.0) * 0.25;
+                float specular = pow(max(0.0, sin(gray * 15.0 + n * 4.0 + time)), 15.0) * 0.35;
+                fluidCol = vec3(clamp(baseDetail * 0.8 + 0.15 + reflection + fresnel + specular, 0.0, 1.0));
+            } else {
+                fluidCol = getThermal(gray + n + sin(time * 0.3) * 0.05);
+            }
+
+            vec3 finalColor = mix(finalBg, fluidCol, mask);
+            gl_FragColor = vec4(finalColor, (uIsTransparent > 0.5 ? mask : 1.0));
+        }
+    `;
+
+    let modelScene, modelCamera, modelRT, currentModel;
+    function init3DSystem() {
+        modelScene = new THREE.Scene();
+        modelCamera = new THREE.PerspectiveCamera(45, 0.75, 0.1, 100);
+        modelCamera.position.z = 3;
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(5, 5, 5);
+        modelScene.add(ambientLight, directionalLight);
+        modelRT = new THREE.WebGLRenderTarget(1024, 1365, { format: THREE.RGBAFormat });
+    }
+    init3DSystem();
+
+    const wrapper = document.getElementById('dropZone');
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    camera.position.z = 1;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+    wrapper.appendChild(renderer.domElement);
+
+    const material = new THREE.ShaderMaterial({
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader,
+        transparent: true,
+        uniforms: {
+            uResolution: { value: new THREE.Vector2() }, uTime: { value: 0.0 }, uSpeed: { value: 0.5 },
+            uThreshold: { value: 0.45 }, uScale: { value: 1.0 }, uBgColor: { value: new THREE.Color(0xffffff) },
+            uC: { value: [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()] },
+            uTexture: { value: new THREE.Texture() }, uTexRes: { value: new THREE.Vector2(1, 1) },
+            uBgTexture: { value: new THREE.Texture() }, uBgRes: { value: new THREE.Vector2(1, 1) },
+            uHasBgTexture: { value: 0.0 }, uHasMainTexture: { value: 0.0 }, uMode: { value: 0.0 },
+            uIsTransparent: { value: 0.0 }
+        }
+    });
+
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    scene.add(mesh);
+
+    function resize() {
+        const w = wrapper.clientWidth, h = wrapper.clientHeight;
+        renderer.setSize(w, h);
+        material.uniforms.uResolution.value.set(w, h);
+    }
+
+    let videoElement = null;
+    function handleFile(file) {
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const name = file.name.toLowerCase();
+        if(videoElement) { videoElement.pause(); videoElement.remove(); videoElement = null; }
+        if(currentModel) { modelScene.remove(currentModel); currentModel = null; }
+
+        if (name.endsWith('.glb') || name.endsWith('.gltf')) {
+            const loader = new THREE.GLTFLoader();
+            loader.load(url, (gltf) => {
+                currentModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(currentModel);
+                const size = box.getSize(new THREE.Vector3());
+                currentModel.scale.setScalar(1.5 / Math.max(size.x, size.y, size.z));
+                currentModel.position.y = -0.2;
+                modelScene.add(currentModel);
+                material.uniforms.uHasMainTexture.value = 1.0;
+                material.uniforms.uTexture.value = modelRT.texture;
+                material.uniforms.uTexRes.value.set(1024, 1365);
+            });
+        } else if (file.type.startsWith('video')) {
+            videoElement = document.createElement('video');
+            videoElement.src = url;
+            videoElement.loop = videoElement.muted = true;
+            videoElement.setAttribute('playsinline', '');
+            videoElement.play();
+            videoElement.onloadedmetadata = () => {
+                const tex = new THREE.VideoTexture(videoElement);
+                tex.minFilter = THREE.LinearFilter;
+                material.uniforms.uTexture.value = tex;
+                material.uniforms.uTexRes.value.set(videoElement.videoWidth, videoElement.videoHeight);
+                material.uniforms.uHasMainTexture.value = 1.0;
+            };
+        } else {
+            new THREE.TextureLoader().load(url, (tex) => {
+                material.uniforms.uTexture.value = tex;
+                material.uniforms.uTexRes.value.set(tex.image.width, tex.image.height);
+                material.uniforms.uHasMainTexture.value = 1.0;
+            });
+        }
+    }
+
+    // --- 修改：初始化时不加载任何图片，保持空白状态 ---
+    window.onload = () => {
+        material.uniforms.uHasMainTexture.value = 0.0;
+    };
+
+    wrapper.ondragover = (e) => { e.preventDefault(); wrapper.style.background = '#f7f7f7'; };
+    wrapper.ondragleave = () => { wrapper.style.background = '#FFFFFF'; };
+    wrapper.ondrop = (e) => { e.preventDefault(); wrapper.style.background = '#FFFFFF'; handleFile(e.dataTransfer.files[0]); };
+
+    const fileInput = document.getElementById('fileInput');
+    const bgFileInput = document.getElementById('bgFileInput');
+    const removeBgBtn = document.getElementById('removeBgBtn');
+    let isPaused = false; 
+
+    document.getElementById('importBtn').onclick = () => fileInput.click();
+    document.getElementById('importBgBtn').onclick = () => bgFileInput.click();
+    fileInput.onchange = (e) => { handleFile(e.target.files[0]); e.target.value = ''; };
+
+    bgFileInput.onchange = (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        new THREE.TextureLoader().load(URL.createObjectURL(file), (tex) => {
+            tex.minFilter = THREE.LinearFilter;
+            material.uniforms.uBgTexture.value = tex;
+            material.uniforms.uBgRes.value.set(tex.image.width, tex.image.height);
+            material.uniforms.uHasBgTexture.value = 1.0;
+            removeBgBtn.style.display = 'flex';
+        });
+        e.target.value = '';
+    };
+
+    removeBgBtn.onclick = () => {
+        material.uniforms.uHasBgTexture.value = 0.0;
+        material.uniforms.uBgTexture.value = new THREE.Texture();
+        removeBgBtn.style.display = 'none';
+    };
+
+    const hexInput = document.getElementById('v-bgColor');
+    const colorPicker = document.getElementById('bgColor');
+    function applyColor(val) {
+        let s = val.trim(); if(!s.startsWith('#')) s = '#' + s;
+        const c = new THREE.Color();
+        try { c.set(s); material.uniforms.uBgColor.value.copy(c); if(s.length === 7) colorPicker.value = s; } catch(e) {}
+    }
+    hexInput.oninput = (e) => applyColor(e.target.value);
+    colorPicker.oninput = (e) => {
+        material.uniforms.uBgColor.value.set(e.target.value);
+        hexInput.value = e.target.value.toUpperCase();
+    };
+
+    const bind = (id, uniform) => {
+        const el = document.getElementById(id);
+        el.oninput = () => {
+            material.uniforms[uniform].value = parseFloat(el.value);
+            document.getElementById('v-' + id).innerText = el.value;
+        };
+    };
+    bind('speed', 'uSpeed'); bind('threshold', 'uThreshold'); bind('scale', 'uScale');
+
+    function applyTheme(key) {
+        const t = themes[key];
+        material.uniforms.uMode.value = t.mode;
+        if(t.mode === 1.0) t.c.forEach((rgb, i) => material.uniforms.uC.value[i].setRGB(...rgb));
+    }
+    document.getElementById('themeSelect').onchange = (e) => applyTheme(e.target.value);
+    applyTheme('Original');
+
+    async function exportImage(isPng) {
+        const ow = wrapper.clientWidth, oh = wrapper.clientHeight;
+        const printW = 3508, printH = 4961; 
+        material.uniforms.uIsTransparent.value = isPng ? 1.0 : 0.0;
+        renderer.setSize(printW, printH, false);
+        material.uniforms.uResolution.value.set(printW, printH);
+        renderer.render(scene, camera);
+        const link = document.createElement('a');
+        link.download = isPng ? 'fluid-A3-transparent.png' : 'fluid-A3-highres.jpg';
+        link.href = renderer.domElement.toDataURL(isPng ? 'image/png' : 'image/jpeg', 1.0);
+        link.click();
+        material.uniforms.uIsTransparent.value = 0.0;
+        renderer.setSize(ow, oh, false);
+        material.uniforms.uResolution.value.set(ow, oh);
+    }
+    document.getElementById('downloadJpg').onclick = () => exportImage(false);
+    document.getElementById('downloadPng').onclick = () => exportImage(true);
+
+    document.getElementById('downloadMp4').onclick = async function() {
+        const btn = this;
+        const originalText = btn.textContent;
+        const isVideo = (videoElement && !isNaN(videoElement.duration));
+        const targetDuration = 6.5; 
+        
+        btn.disabled = true;
+        const ow = wrapper.clientWidth, oh = wrapper.clientHeight;
+        renderer.setSize(810, 1080, false); 
+        material.uniforms.uResolution.value.set(810, 1080);
+
+        totalTime = 0;
+        if (isVideo) {
+            videoElement.pause();
+            videoElement.currentTime = 0;
+            videoElement.loop = true;
+            await new Promise(r => videoElement.onseeked = r);
+        }
+
+        const mimeType = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=h264', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
+        const stream = renderer.domElement.captureStream ? renderer.domElement.captureStream(30) : renderer.domElement.webkitCaptureStream(30); 
+        const recorder = new MediaRecorder(stream, { 
+            mimeType, 
+            videoBitsPerSecond: 15000000 
+        });
+
+        const chunks = [];
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: mimeType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Fluid_Lab_6s_${Math.floor(Date.now()/1000)}.mp4`;
+            a.click();
+            renderer.setSize(ow, oh, false);
+            material.uniforms.uResolution.value.set(ow, oh);
+            if(isVideo) { videoElement.loop = true; videoElement.play(); }
+            btn.disabled = false; btn.textContent = originalText;
+        };
+
+        recorder.start();
+        if(isVideo) videoElement.play();
+        const recordStartTime = performance.now();
+
+        const updateRecordLoop = () => {
+            const now = performance.now();
+            const elapsed = (now - recordStartTime) / 1000;
+            const progress = Math.min(99, Math.floor((elapsed / 6.0) * 100));
+            btn.textContent = `REC ${progress}%`;
+
+            if (!isPaused) {
+                totalTime += 0.016; 
+                material.uniforms.uTime.value = totalTime;
+            }
+            renderer.render(scene, camera);
+
+            if (elapsed < targetDuration) {
+                requestAnimationFrame(updateRecordLoop);
+            } else {
+                setTimeout(() => recorder.stop(), 200); 
+            }
+        };
+        requestAnimationFrame(updateRecordLoop);
+    };
+
+    // --- 修改：Reset 功能恢复至刚进入页面时的干净状态 ---
+    document.getElementById('resetBtn').onclick = () => {
+        // 停止视频
+        if(videoElement) { videoElement.pause(); videoElement.remove(); videoElement = null; }
+        // 移除模型
+        if(currentModel) { modelScene.remove(currentModel); currentModel = null; }
+        // 重置 Uniforms
+        material.uniforms.uHasMainTexture.value = 0.0;
+        material.uniforms.uHasBgTexture.value = 0.0;
+        material.uniforms.uTexture.value = new THREE.Texture();
+        material.uniforms.uBgTexture.value = new THREE.Texture();
+        material.uniforms.uBgColor.value.set(0xffffff);
+        material.uniforms.uTime.value = 0;
+        totalTime = 0;
+        
+        // 重置 UI 数值
+        document.getElementById('threshold').value = 0.45;
+        document.getElementById('v-threshold').innerText = '0.45';
+        material.uniforms.uThreshold.value = 0.45;
+        
+        document.getElementById('speed').value = 0.5;
+        document.getElementById('v-speed').innerText = '0.5';
+        material.uniforms.uSpeed.value = 0.5;
+        
+        document.getElementById('scale').value = 1.0;
+        document.getElementById('v-scale').innerText = '1.0';
+        material.uniforms.uScale.value = 1.0;
+        
+        document.getElementById('bgColor').value = "#FFFFFF";
+        document.getElementById('v-bgColor').value = "#FFFFFF";
+        document.getElementById('themeSelect').value = "Original";
+        applyTheme('Original');
+        
+        removeBgBtn.style.display = 'none';
+        isPaused = false;
+        document.getElementById('pauseIcon').innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
+    };
+
+    document.getElementById('pauseBtn').onclick = () => {
+        isPaused = !isPaused;
+        document.getElementById('pauseIcon').innerHTML = isPaused ? `<path d="M8 5v14l11-7z"></path>` : `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
+        if (videoElement) { if (isPaused) videoElement.pause(); else videoElement.play(); }
+    };
+
+    let totalTime = 0;
+    const clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        if(!isPaused) {
+            totalTime += delta;
+            if(currentModel) currentModel.rotation.y += delta * 0.5;
+        }
+        if(currentModel) {
+            renderer.setRenderTarget(modelRT);
+            renderer.setClearColor(0x000000, 0); 
+            renderer.render(modelScene, modelCamera);
+            renderer.setRenderTarget(null);
+        }
+        material.uniforms.uTime.value = totalTime;
+        renderer.render(scene, camera);
+    }
+    window.addEventListener('resize', resize); resize(); animate();
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
